@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.market.module.product.mapper.BookMapper">
+
+    <select id="selectPageWithCategory" resultType="com.market.module.product.entity.Book">
+        SELECT b.* FROM t_book b
+        <where>
+            b.deleted = 0 AND b.status = 1
+            <if test="categoryId != null">
+                AND b.category_id = #{categoryId}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (b.title LIKE CONCAT('%', #{keyword}, '%')
+                     OR b.author LIKE CONCAT('%', #{keyword}, '%')
+                     OR b.description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY b.sales DESC, b.rate DESC
+    </select>
+
+    <select id="searchByKeyword" resultType="com.market.module.product.entity.Book">
+        SELECT * FROM t_book
+        WHERE deleted = 0 AND status = 1
+        <choose>
+            <when test="field == 'title'">
+                AND title LIKE CONCAT('%', #{keyword}, '%')
+            </when>
+            <when test="field == 'author'">
+                AND author LIKE CONCAT('%', #{keyword}, '%')
+            </when>
+            <otherwise>
+                AND (title LIKE CONCAT('%', #{keyword}, '%')
+                     OR author LIKE CONCAT('%', #{keyword}, '%'))
+            </otherwise>
+        </choose>
+        ORDER BY
+            (title LIKE CONCAT('%', #{keyword}, '%')) DESC,
+            (author LIKE CONCAT('%', #{keyword}, '%')) DESC,
+            rate DESC, sales DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectHotBooks" resultType="com.market.module.product.entity.Book">
+        SELECT * FROM t_book
+        WHERE deleted = 0 AND status = 1
+        ORDER BY sales DESC, rate DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectTopRated" resultType="com.market.module.product.entity.Book">
+        SELECT * FROM t_book
+        WHERE deleted = 0 AND status = 1
+        ORDER BY rate DESC, sales DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

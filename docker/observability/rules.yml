@@ -1,0 +1,51 @@
+groups:
+  - name: market-alerts
+    rules:
+      - alert: InstanceDown
+        expr: up{job="market-server"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "market-server 实例不可用"
+          description: "Prometheus 已 30s 抓取不到 {{ $labels.instance }}"
+
+      - alert: HighHttpErrorRate
+        expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[1m])) / clamp_min(sum(rate(http_server_requests_seconds_count[1m])), 0.001) > 0.05
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP 5xx 比例超过 5%"
+
+      - alert: HighHttpP95Latency
+        expr: histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[2m])) by (le)) > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP P95 延迟超过 1s"
+
+      - alert: LoginFailureSpike
+        expr: increase(business_login_failure_total[1m]) > 3
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "登录失败激增（1 分钟内 > 3 次）"
+
+      - alert: PaymentFailureSpike
+        expr: increase(business_payment_failed_total[5m]) > 5
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "支付失败回调增多（5 分钟内 > 5 次）"
+
+      - alert: SeckillSoldOutSpike
+        expr: increase(business_seckill_sold_out_total[1m]) > 20
+        for: 0s
+        labels:
+          severity: info
+        annotations:
+          summary: "秒杀抢券并发激烈（1 分钟内抢完 > 20 次）"

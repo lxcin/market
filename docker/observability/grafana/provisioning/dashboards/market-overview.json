@@ -1,0 +1,67 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP QPS",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(http_server_requests_seconds_count[1m]))", "legendFormat": "qps" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP P95 延迟 (s)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))", "legendFormat": "p95" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "业务计数器",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "business_order_placed_total", "legendFormat": "订单" },
+        { "refId": "B", "expr": "business_payment_success_total", "legendFormat": "支付成功" },
+        { "refId": "C", "expr": "business_seckill_accepted_total", "legendFormat": "秒杀受理" },
+        { "refId": "D", "expr": "business_login_failure_total", "legendFormat": "登录失败" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "缓存命中率",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(cache_access_total{result=~\"hit.*\"}[5m])) / clamp_min(sum(rate(cache_access_total[5m])), 1)", "legendFormat": "hit ratio" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "JVM Heap 使用 (bytes)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "sum(jvm_memory_used_bytes{area=\"heap\"})", "legendFormat": "heap" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Hikari 活跃连接",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "hikaricp_connections_active", "legendFormat": "active" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "title": "Market Overview",
+  "uid": "market-overview",
+  "version": 1
+}

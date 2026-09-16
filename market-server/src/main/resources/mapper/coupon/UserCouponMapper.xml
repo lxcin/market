@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.market.module.coupon.mapper.UserCouponMapper">
+
+    <update id="useCouponCas">
+        UPDATE t_user_coupon
+        SET status = 1, order_id = #{orderId}, used_time = NOW()
+        WHERE id = #{id} AND status = 0
+    </update>
+
+    <update id="releaseCoupon">
+        UPDATE t_user_coupon
+        SET status = 0, order_id = NULL, used_time = NULL
+        WHERE id = #{id} AND status = 1
+    </update>
+
+    <select id="findBestCoupons" resultType="java.util.HashMap">
+        SELECT
+            uc.id AS userCouponId,
+            ct.id AS templateId,
+            ct.name AS templateName,
+            ct.type AS type,
+            ct.threshold_amount AS thresholdAmount,
+            ct.discount_amount AS templateDiscountAmount,
+            ct.discount_rate AS discountRate,
+            CASE
+                WHEN ct.type = 1 THEN ct.discount_amount
+                WHEN ct.type = 2 THEN #{orderAmount} * (1 - ct.discount_rate)
+                WHEN ct.type = 3 THEN LEAST(ct.discount_amount, #{orderAmount})
+            END AS discountAmount,
+            #{orderAmount} - (
+                CASE
+                    WHEN ct.type = 1 THEN ct.discount_amount
+                    WHEN ct.type = 2 THEN #{orderAmount} * (1 - ct.discount_rate)
+                    WHEN ct.type = 3 THEN LEAST(ct.discount_amount, #{orderAmount})
+                END
+            ) AS finalAmount
+        FROM t_user_coupon uc
+        JOIN t_coupon_template ct ON uc.coupon_template_id = ct.id
+        WHERE uc.user_id = #{userId}
+          AND uc.status = 0
+          AND ct.status = 1
+          AND ct.end_time > NOW()
+          AND #{orderAmount} >= ct.threshold_amount
+        ORDER BY discountAmount DESC
+    </select>
+
+</mapper>

@@ -1,0 +1,30 @@
+# ---- Java / Maven ----
+market-server/target/
+*.class
+*.jar
+!market-server/.mvn/wrapper/maven-wrapper.jar
+
+# ---- Node / 前端 ----
+market-web/node_modules/
+market-web/dist/
+npm-debug.log*
+yarn-error.log*
+
+# ---- IDE ----
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- 环境变量 / 密钥（不提交） ----
+.env
+*.local
+application-local.yml
+
+# ---- 日志 ----
+*.log
+logs/

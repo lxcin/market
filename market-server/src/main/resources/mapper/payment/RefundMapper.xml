@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.market.module.payment.mapper.RefundMapper">
+
+    <update id="markSuccess">
+        UPDATE t_refund
+        SET status = 1, refund_trade_no = #{refundTradeNo}
+        WHERE refund_no = #{refundNo} AND status = 0
+    </update>
+
+    <update id="markFailed">
+        UPDATE t_refund
+        SET status = 2
+        WHERE refund_no = #{refundNo} AND status = 0
+    </update>
+
+</mapper>

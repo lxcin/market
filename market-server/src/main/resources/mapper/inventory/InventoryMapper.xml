@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.market.module.inventory.mapper.InventoryMapper">
+
+    <update id="deductStock">
+        UPDATE t_inventory
+        SET stock = stock - #{quantity}, version = version + 1
+        WHERE book_id = #{bookId} AND stock >= #{quantity} AND version = #{version}
+    </update>
+
+    <update id="increaseStock">
+        UPDATE t_inventory
+        SET stock = stock + #{quantity}
+        WHERE book_id = #{bookId}
+    </update>
+
+    <update id="reserveStock">
+        UPDATE t_inventory
+        SET stock = stock - #{quantity}, locked_stock = locked_stock + #{quantity}, version = version + 1
+        WHERE book_id = #{bookId} AND stock >= #{quantity} AND version = #{version}
+    </update>
+
+    <update id="commitStock">
+        UPDATE t_inventory
+        SET locked_stock = locked_stock - #{quantity}
+        WHERE book_id = #{bookId} AND locked_stock >= #{quantity}
+    </update>
+
+    <update id="releaseStock">
+        UPDATE t_inventory
+        SET stock = stock + #{quantity}, locked_stock = locked_stock - #{quantity}
+        WHERE book_id = #{bookId} AND locked_stock >= #{quantity}
+    </update>
+
+</mapper>

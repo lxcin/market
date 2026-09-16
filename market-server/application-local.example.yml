@@ -1,0 +1,13 @@
+# 复制为 application-local.yml 并填入真实值（application-local.yml 已被 .gitignore 忽略）
+# Spring Boot 默认激活 local profile（见 application.yml: spring.profiles.active）
+# 也可改用环境变量注入：DB_PASSWORD / REDIS_PASSWORD / JWT_SECRET
+spring:
+  datasource:
+    password: your-db-password
+  data:
+    redis:
+      password: your-redis-password
+
+jwt:
+  # 至少 256 bit（32 字节）的随机字符串
+  secret: please-change-me-to-a-long-random-secret-at-least-256-bits
