@@ -1,0 +1,101 @@
+# 生产部署编排（单台服务器 + Docker Compose，HTTP）
+# 用法：
+#   1) cp .env.prod.example .env  并填入密钥
+#   2) docker login ghcr.io       （若 GHCR 包为私有，需用 PAT 登录）
+#   3) docker compose -f docker-compose.prod.yml pull
+#   4) docker compose -f docker-compose.prod.yml up -d
+name: market-prod
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: market-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set in .env}
+      MYSQL_DATABASE: market
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-time-zone=+08:00
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: market-redis
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?set in .env}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?set in .env}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  elasticsearch:
+    image: ghcr.io/${IMAGE_OWNER:-lxcin}/market-es:8.11.0
+    container_name: market-es
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=${ES_JAVA_OPTS:--Xms512m -Xmx512m}"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -qE 'green|yellow'"]
+      interval: 20s
+      timeout: 10s
+      retries: 15
+
+  market-server:
+    image: ghcr.io/${IMAGE_OWNER:-lxcin}/market-server:${IMAGE_TAG:-latest}
+    container_name: market-server
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/market?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-root}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?set in .env}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?set in .env}
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      JWT_SECRET: ${JWT_SECRET:?set in .env}
+      SMS_MOCK: ${SMS_MOCK:-true}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+
+  market-web:
+    image: ghcr.io/${IMAGE_OWNER:-lxcin}/market-web:${IMAGE_TAG:-latest}
+    container_name: market-web
+    restart: always
+    depends_on:
+      - market-server
+    ports:
+      - "80:80"
+
+volumes:
+  mysql-data:
+  redis-data:
+  es-data:
